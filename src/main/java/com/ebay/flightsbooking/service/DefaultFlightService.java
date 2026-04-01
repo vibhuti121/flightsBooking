@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.ebay.flightsbooking.dto.FlightReviewResponse;
+import com.ebay.flightsbooking.exception.NoFlightsAvailableException;
+import com.ebay.flightsbooking.exception.InvalidBookingException;
 import com.ebay.flightsbooking.exception.ResourceNotFoundException;
 import com.ebay.flightsbooking.model.Flight;
 import com.ebay.flightsbooking.model.Meal;
@@ -23,13 +25,23 @@ public class DefaultFlightService implements FlightService {
 
     @Override
     public List<Flight> getAvailableFlights(String origin, String destination, LocalDate travelDate) {
-        return flightRepository.findAll().stream()
+        if (travelDate != null && travelDate.isBefore(LocalDate.now())) {
+            throw new InvalidBookingException("Travel date cannot be in the past. Please provide a valid future date.");
+        }
+
+        List<Flight> flights = flightRepository.findAll().stream()
                 .filter(flight -> flight.getTotalAvailableSeats() > 0)
                 .filter(flight -> origin == null || flight.getOrigin().equalsIgnoreCase(origin))
                 .filter(flight -> destination == null || flight.getDestination().equalsIgnoreCase(destination))
                 .filter(flight -> travelDate == null || flight.getDepartureDate().toLocalDate().isEqual(travelDate))
                 .sorted(Comparator.comparing(Flight::getDepartureDate))
                 .toList();
+
+        if (flights.isEmpty()) {
+            throw new NoFlightsAvailableException(buildNoFlightsMessage(origin, destination, travelDate));
+        }
+
+        return flights;
     }
 
     @Override
@@ -71,5 +83,25 @@ public class DefaultFlightService implements FlightService {
     @Override
     public Flight saveFlight(Flight flight) {
         return flightRepository.save(flight);
+    }
+
+    private String buildNoFlightsMessage(String origin, String destination, LocalDate travelDate) {
+        if (origin != null && destination != null && travelDate != null) {
+            return "No flights found for origin " + origin + ", destination " + destination
+                    + " on date " + travelDate + ".";
+        }
+        if (origin != null && destination != null) {
+            return "No flights found for origin " + origin + " and destination " + destination + ".";
+        }
+        if (origin != null) {
+            return "No flights found for origin " + origin + ".";
+        }
+        if (destination != null) {
+            return "No flights found for destination " + destination + ".";
+        }
+        if (travelDate != null) {
+            return "No flights found on date " + travelDate + ".";
+        }
+        return "No flights are available for booking.";
     }
 }

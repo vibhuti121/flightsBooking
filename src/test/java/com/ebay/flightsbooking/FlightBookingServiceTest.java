@@ -1,6 +1,7 @@
 package com.ebay.flightsbooking;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.ebay.flightsbooking.dto.BookingRequest;
+import com.ebay.flightsbooking.exception.InvalidBookingException;
+import com.ebay.flightsbooking.exception.NoFlightsAvailableException;
 import com.ebay.flightsbooking.model.Booking;
 import com.ebay.flightsbooking.model.Passenger;
 import com.ebay.flightsbooking.service.BookingService;
@@ -49,5 +52,19 @@ class FlightBookingServiceTest {
         assertThat(booking.getListOfSeats()).containsEntry("P1", "1A");
         assertThat(flightService.getAvailableSeats(1L)).hasSize(4);
         assertThat(flightService.getPriceReview(1L).getTotalAvailableSeats()).isEqualTo(4);
+    }
+
+    @Test
+    void shouldRejectPastTravelDateWhenSearchingFlights() {
+        assertThatThrownBy(() -> flightService.getAvailableFlights("DEL", "BLR", LocalDate.of(2026, 3, 31)))
+                .isInstanceOf(InvalidBookingException.class)
+                .hasMessage("Travel date cannot be in the past. Please provide a valid future date.");
+    }
+
+    @Test
+    void shouldShowMessageWhenNoFlightsMatchOriginDestination() {
+        assertThatThrownBy(() -> flightService.getAvailableFlights("DEL", "MAA", LocalDate.of(2026, 4, 15)))
+                .isInstanceOf(NoFlightsAvailableException.class)
+                .hasMessage("No flights found for origin DEL, destination MAA on date 2026-04-15.");
     }
 }

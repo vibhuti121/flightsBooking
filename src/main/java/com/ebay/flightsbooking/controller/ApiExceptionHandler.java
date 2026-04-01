@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.ebay.flightsbooking.dto.ApiErrorResponse;
 import com.ebay.flightsbooking.exception.InvalidBookingException;
+import com.ebay.flightsbooking.exception.NoFlightsAvailableException;
 import com.ebay.flightsbooking.exception.ResourceNotFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidBookingException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidBooking(InvalidBookingException exception,
                                                                  HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(NoFlightsAvailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoFlights(NoFlightsAvailableException exception,
+                                                            HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 

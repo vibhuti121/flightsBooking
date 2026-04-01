@@ -13,15 +13,16 @@ import com.ebay.flightsbooking.model.Meal;
 import com.ebay.flightsbooking.model.MealType;
 import com.ebay.flightsbooking.model.Seat;
 import com.ebay.flightsbooking.model.SeatType;
+import com.ebay.flightsbooking.repository.FlightRepository;
 import com.ebay.flightsbooking.service.FlightService;
 
 @Configuration
 public class FlightDataInitializer {
 
     @Bean
-    CommandLineRunner loadFlights(FlightService flightService) {
+    CommandLineRunner loadFlights(FlightService flightService, FlightRepository flightRepository) {
         return args -> {
-            if (!flightService.getAvailableFlights(null, null, null).isEmpty()) {
+            if (!flightRepository.findAll().isEmpty()) {
                 return;
             }
 

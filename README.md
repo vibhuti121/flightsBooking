@@ -53,6 +53,7 @@ All successful requests return HTTP `200 OK`.
 Error handling rules:
 
 - HTTP `400 Bad Request` for wrong parameters, missing parameters, invalid request body, unavailable seats, invalid meals, or invalid travel date.
+- HTTP `400 Bad Request` for wrong parameters, missing parameters, invalid request body, unavailable seats, invalid meals, invalid past travel date, or no matching flights for the requested search.
 - HTTP `500 Internal Server Error` for unexpected server-side failures.
 
 ### 1. Get Available Flights
@@ -80,6 +81,24 @@ curl --location 'http://localhost:8080/available/flights?travelDate=wrong-date'
 ```
 
 - Returns `400 Bad Request`
+
+Wrong date case:
+
+```bash
+curl --location 'http://localhost:8080/available/flights?origin=DEL&destination=BLR&travelDate=2026-03-31'
+```
+
+- Returns `400 Bad Request`
+- Example message: `Travel date cannot be in the past. Please provide a valid future date.`
+
+No flights found case:
+
+```bash
+curl --location 'http://localhost:8080/available/flights?origin=DEL&destination=MAA&travelDate=2026-04-15'
+```
+
+- Returns `400 Bad Request`
+- Example message: `No flights found for origin DEL, destination MAA on date 2026-04-15.`
 
 ### 2. Review Price
 
@@ -231,6 +250,44 @@ Server error case:
 
 - Any unhandled runtime failure returns `500 Internal Server Error`.
 - Response body includes `timestamp`, `status`, `error`, `message`, and `path`.
+
+## Error Response Examples
+
+Example `400 Bad Request` response for no flights found:
+
+```json
+{
+  "timestamp": "2026-04-01T10:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "No flights found for origin DEL, destination MAA on date 2026-04-15.",
+  "path": "/available/flights"
+}
+```
+
+Example `400 Bad Request` response for wrong date:
+
+```json
+{
+  "timestamp": "2026-04-01T10:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Travel date cannot be in the past. Please provide a valid future date.",
+  "path": "/available/flights"
+}
+```
+
+Example `500 Internal Server Error` response:
+
+```json
+{
+  "timestamp": "2026-04-01T10:00:00",
+  "status": 500,
+  "error": "Internal Server Error",
+  "message": "Unexpected server error occurred.",
+  "path": "/confirm/booking"
+}
+```
 
 ## Flow Of Application
 
