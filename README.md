@@ -6,7 +6,7 @@ It uses:
 - Spring Boot
 - Spring Web
 - Lombok
-- Java 17
+- Java 17(amazon corretto)
 - Maven Wrapper
 - In-memory repositories backed by `Map` and `AtomicLong`
 
