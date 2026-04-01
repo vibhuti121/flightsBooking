@@ -49,6 +49,12 @@ The application seeds sample flights at startup.
 
 ## API Endpoints
 
+All successful requests return HTTP `200 OK`.
+Error handling rules:
+
+- HTTP `400 Bad Request` for wrong parameters, missing parameters, invalid request body, unavailable seats, invalid meals, or invalid travel date.
+- HTTP `500 Internal Server Error` for unexpected server-side failures.
+
 ### 1. Get Available Flights
 
 Fetch all flights or filter by origin, destination, and travel date.
@@ -63,6 +69,18 @@ With filters:
 curl --location 'http://localhost:8080/available/flights?origin=DEL&destination=BLR&travelDate=2026-04-15'
 ```
 
+Success:
+
+- `200 OK` with matching flights.
+
+Wrong case:
+
+```bash
+curl --location 'http://localhost:8080/available/flights?travelDate=wrong-date'
+```
+
+- Returns `400 Bad Request`
+
 ### 2. Review Price
 
 Fetch base price and cancellation/modification details for a flight.
@@ -70,6 +88,18 @@ Fetch base price and cancellation/modification details for a flight.
 ```bash
 curl --location 'http://localhost:8080/review/price?flightId=1'
 ```
+
+Success:
+
+- `200 OK` with base price, cancellation policy, modification policy, and available seats.
+
+Wrong case:
+
+```bash
+curl --location 'http://localhost:8080/review/price?flightId=999'
+```
+
+- Returns `400 Bad Request`
 
 ### 3. Get Available Seats
 
@@ -79,6 +109,18 @@ Fetch seats that are still available for the selected flight.
 curl --location 'http://localhost:8080/avaialble/seats?flightId=1'
 ```
 
+Success:
+
+- `200 OK` with available seats for the flight.
+
+Wrong case:
+
+```bash
+curl --location 'http://localhost:8080/avaialble/seats'
+```
+
+- Returns `400 Bad Request`
+
 ### 4. Get Available Meals
 
 Fetch meals available for the selected flight.
@@ -87,6 +129,18 @@ Fetch meals available for the selected flight.
 curl --location 'http://localhost:8080/avaialble/meals?flightId=1'
 ```
 
+Success:
+
+- `200 OK` with available meals for the flight.
+
+Wrong case:
+
+```bash
+curl --location 'http://localhost:8080/avaialble/meals?flightId=999'
+```
+
+- Returns `400 Bad Request`
+
 ### 5. Get Bookings
 
 Fetch all confirmed bookings.
@@ -94,6 +148,10 @@ Fetch all confirmed bookings.
 ```bash
 curl --location 'http://localhost:8080/bookings'
 ```
+
+Success:
+
+- `200 OK` with all current bookings.
 
 ### 6. Confirm Booking
 
@@ -127,6 +185,52 @@ curl --location 'http://localhost:8080/confirm/booking' \
   "travelDate": "2026-04-15"
 }'
 ```
+
+Success:
+
+- `200 OK` with created booking details.
+
+Wrong case:
+
+```bash
+curl --location 'http://localhost:8080/confirm/booking' \
+--header 'Content-Type: application/json' \
+--data '{
+  "flightId": 1,
+  "seatSelections": {
+    "P1": "9Z"
+  },
+  "passengers": [
+    {
+      "paxId": "P1",
+      "name": "Alice"
+    }
+  ],
+  "customerMail": "customer@test.com",
+  "customerNumber": "9999999999",
+  "mealSelections": {},
+  "travelDate": "2026-04-15"
+}'
+```
+
+- Returns `400 Bad Request`
+
+Wrong body format case:
+
+```bash
+curl --location 'http://localhost:8080/confirm/booking' \
+--header 'Content-Type: application/json' \
+--data '{
+  "flightId": "abc"
+}'
+```
+
+- Returns `400 Bad Request`
+
+Server error case:
+
+- Any unhandled runtime failure returns `500 Internal Server Error`.
+- Response body includes `timestamp`, `status`, `error`, `message`, and `path`.
 
 ## Flow Of Application
 
@@ -167,3 +271,4 @@ curl --location 'http://localhost:8080/confirm/booking' \
 - Endpoint names `avaialble/seats` and `avaialble/meals` intentionally match the requested API contract.
 - Sample flights are preloaded for testing the APIs quickly.
 - Since storage is in memory, no booking data is persisted after shutdown.
+- Resource lookups with invalid ids are treated as client input errors and return `400`.

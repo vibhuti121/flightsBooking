@@ -9,5 +9,8 @@ import lombok.Value;
 @Builder
 public class ApiErrorResponse {
     LocalDateTime timestamp;
+    Integer status;
+    String error;
     String message;
+    String path;
 }
